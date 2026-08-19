@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deep Paper Reader"
+  short_description: "Evidence-grounded paper reading and review"
+  default_prompt: "Use $deep-paper-reader to deeply read this paper and produce a traceable report."
