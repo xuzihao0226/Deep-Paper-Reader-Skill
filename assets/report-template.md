@@ -43,11 +43,22 @@
 
 State exactly which version and sections were available. If the report is based on an abstract or partial text, list every judgment that cannot be verified.
 
-## 3. Research Question or Thesis
+## 3. Research Question, Thesis, and Field Position
 
 {{problem_background}}
 
 {{research_question_or_thesis_detail}}
+
+| Positioning field | Reading result |
+|---|---|
+| Research problem | {{position_research_problem}} |
+| Method, argument, or analysis route | {{position_route}} |
+| Main assumptions | {{position_assumptions}} |
+| Evaluation or support route | {{position_evaluation}} |
+| Contribution type | {{position_contribution_type}} |
+| Similar or supporting works | {{position_similar_works}} |
+| Contrasting works | {{position_contrasting_works}} |
+| Gap left | {{position_gap_left}} |
 
 ## 4. Essential Concepts and Terms
 
@@ -78,6 +89,14 @@ Keep only concepts required to understand the main line of reasoning.
 | C1 | {{claim}} | {{claim_category}} | {{source_location}} | {{evidence_summary}} | {{support_strength}} | {{largest_gap}} | {{verdict}} |
 
 Explain each central claim in prose after the table when the table alone is insufficient for understanding.
+
+### Claim safety and wording boundary
+
+| Claim ID | Support strength | Strongest safe version | Wording to avoid | Result boundary |
+|---|---|---|---|---|
+| C1 | {{support_strength}} | {{safe_claim_version}} | {{wording_to_avoid}} | {{result_claim_boundary}} |
+
+Use `result_claim_boundary` to distinguish a demonstrated result from a planned evaluation, background assumption, interpretation, or unavailable evidence.
 
 ## 7. Key Figures, Tables, Formulas, or Passages
 

@@ -31,15 +31,63 @@ Paper input
 
 ## Current Status
 
-The initial project skeleton is complete:
+The project now includes:
 
 - core Skill workflow;
-- report template;
+- report template with paper-position and claim-safety records;
 - paper-type routing guide;
 - evidence and uncertainty policy;
-- Codex interface metadata.
+- Codex interface metadata;
+- workspace preparation for local PDF, PDF URL, arXiv, DOI, publisher page, or title input;
+- source acquisition with verified PDF detection and explicit access-status recording;
+- page-aware PDF text extraction with stable evidence locators and OCR warnings;
+- heuristic section reconstruction and traceable claim-candidate retrieval;
+- source-first arXiv figure extraction with LaTeX caption and section context;
+- formal claim-evidence review records with controlled verdicts, source-locator checks, and an explicit human decision gate;
+- compact review overlays that keep central claims, add important claims missed by retrieval, and safely discard unlisted candidates without editing large evidence files by hand;
+- a cross-platform Python pipeline that runs deterministic preprocessing from paper input through claim-review preparation;
+- final report validation for structure, evidence locations, images, encoding, duplication, and math compatibility;
+- automated workspace regression tests.
 
-Input preparation, PDF extraction, workspace automation, report validation, and end-to-end tests are under development.
+Real-paper forward evaluations now cover both humanities argumentation and a long technical tutorial review. Further report-writing assistance remains under development. Final scholarly judgments stay human- or agent-reviewed rather than being assigned by cue matching alone.
+
+## Current Executable Workflow
+
+```bash
+python3 scripts/run_pipeline.py \
+  --paper "<paper input>" \
+  --output-root "<output directory>" \
+  --mode deep_read
+```
+
+The unified pipeline prepares the source, traceable text, reading map, figures, and `evidence/claims.json`, then deliberately stops at `ready_for_claim_review`. Review each proposed claim and its adjacent source context before continuing:
+
+```bash
+python3 scripts/claim_records.py apply-review \
+  --workspace "<generated paper workspace>" \
+  --review "<compact review overlay.json>"
+
+python3 scripts/claim_records.py validate \
+  --workspace "<generated paper workspace>"
+
+python3 scripts/validate_report.py \
+  --workspace "<generated paper workspace>" \
+  --final
+```
+
+Use `python3 scripts/run_pipeline.py --resume-workspace "<workspace>"` to continue an interrupted workspace without replacing existing manual claim decisions. The earlier individual commands remain available when a stage needs to be run or debugged separately.
+
+The first real-paper forward test used Henrik Bohlin's 2009 philosophy article *Sympathy, Understanding, and Hermeneutics in Hume’s Treatise*. It exposed and led to fixes for alternating journal headers, numbered footnotes misread as headings, over-broad claim retrieval, and cumbersome manual review. The revised run detected 11 document sections, produced 40 ranked candidates, retained 8 central reviewed claims, and passed both evidence and final-report validation without warnings. The copyrighted paper and generated reading workspace are not included in this repository.
+
+The second forward test used Kevin P. Murphy's 253-page arXiv tutorial *Reinforcement Learning: An Overview* through its DOI. It verified DOI-to-arXiv acquisition, source-bundle figure extraction, and long-document review routing. The test also exposed page-number-only leaves being treated as failed extraction, pseudocode and formulas being misread as headings, and local chapter descriptions being promoted over review-level scope claims. The revised run classified six leaves as intentional blanks, reconstructed 227 sections, extracted 62 figures, reviewed 40 retrieval candidates, added 8 central paper-level claims through a compact overlay, and passed both validation gates without warnings. The paper and generated workspace are not included in this repository.
+
+The source resolver supports local Portable Document Format (PDF) files, direct PDF URLs, arXiv links or IDs, Digital Object Identifier (DOI) records, and publisher landing pages. A title-only input is deliberately routed to authoritative identity search instead of being matched automatically. The figure extractor runs when an arXiv source bundle is available.
+
+Run all automated tests from the repository root with:
+
+```bash
+python3 -m unittest discover -s scripts -p 'test_*.py'
+```
 
 ## Repository Structure
 
@@ -76,7 +124,9 @@ The project is independently implemented and draws product inspiration from:
 - [sodalone/paper-reading-skill](https://github.com/sodalone/paper-reading-skill)
 - [snake-fan/Paper-Reading-Skills](https://github.com/snake-fan/Paper-Reading-Skills)
 
-No source code from `sodalone/paper-reading-skill` is copied into this repository. Reused MIT-licensed material, if introduced later, will retain the required copyright and license notices.
+The Paper Position Record and Claim Support Bank structures from `snake-fan/Paper-Reading-Skills` are adapted in the report template under the MIT License. Copyright and license details are preserved in [`references/third-party-notices.md`](references/third-party-notices.md).
+
+The owner of `sodalone/paper-reading-skill` has explicitly authorized direct reuse, modification, and integration of its code in this project. `scripts/extract_figures.py`, `scripts/validate_report.py`, and their inherited regression checks directly retain and adapt that project's implementation; source headers identify the provenance. The stage ordering of `scripts/run_pipeline.py` also adapts that project's pipeline concept, while generalizing it into cross-platform Python and supporting non-arXiv inputs.
 
 ## License
 

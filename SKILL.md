@@ -9,6 +9,19 @@ description: Read, explain, and critically review one academic paper with tracea
 
 Turn one academic paper into an understandable, evidence-grounded, reusable reading report. Match the reading method to the paper type, distinguish the authors' claims from the report's inferences, and preserve source locations for every conclusion that could change the reader's judgment.
 
+## Executable Quick Start
+
+For a new paper, run deterministic preprocessing through the claim-review gate:
+
+```bash
+python3 "<skill-root>/scripts/run_pipeline.py" \
+  --paper "<local PDF, URL, arXiv ID, DOI, publisher page, or title>" \
+  --output-root "<user-selected output root>" \
+  --mode "<quick_read|deep_read|critical_review>"
+```
+
+Use `--resume-workspace "<paper workspace>"` to continue an interrupted run without replacing existing claim-review records. Read `evidence/pipeline.json` for stage status. The deterministic pipeline stops at `ready_for_claim_review`; it does not make final scholarly judgments or write a completed report automatically.
+
 ## Core Rules
 
 - Help the user understand before evaluating. Explain the problem, concepts, structure, method, or argument before presenting criticism.
@@ -40,6 +53,15 @@ Record the access level as one of:
 - `abstract_only`: only metadata and abstract are available.
 
 Never produce a full-text review from `abstract_only`. In that case, provide an explicitly labeled abstract-based briefing and list what cannot be verified.
+
+After preparing the workspace, run the bundled source resolver:
+
+```bash
+python3 "<skill-root>/scripts/fetch_source.py" \
+  --workspace "<paper workspace>"
+```
+
+Use its recorded acquisition status and verified PDF signature rather than assuming that a successful HTTP response is a paper. Treat `full_text_ready` as source availability, then verify extraction separately. Treat `abstract_only`, `metadata_only`, `needs_authoritative_search`, and `failed` as explicit limits. For a title-only input, use authoritative scholarly search to identify candidate records and ask for confirmation when more than one plausible paper matches; then prepare or update the workspace with the resolved DOI, arXiv ID, or source URL.
 
 For image-only or badly encoded PDFs, attempt text extraction or optical character recognition only when available. Report extraction limitations instead of guessing missing passages.
 
@@ -100,7 +122,48 @@ Create or reuse one paper workspace under the user-selected output root:
 - `images/`: only figures or tables used in the report;
 - `evidence/`: structured claim and source-location records used to verify the report.
 
+For a new paper, initialize this structure with the bundled script:
+
+```bash
+python3 "<skill-root>/scripts/prepare_workspace.py" \
+  --paper "<local PDF, URL, arXiv ID, DOI, or title>" \
+  --output-root "<user-selected output root>" \
+  --mode "<quick_read|deep_read|critical_review>"
+```
+
+Add `--title`, `--authors`, `--year`, `--source-url`, `--paper-type`, `--access-level`, and `--language` only when those values are known. The script copies a local PDF to `source/paper.pdf`, records normalized input metadata, and creates the initial report from `assets/report-template.md`.
+
+Run `scripts/fetch_source.py` next. It updates `metadata.json`, preserves authoritative source records under `source/`, and writes a verified accessible PDF to `source/paper.pdf` when available. Do not treat Crossref metadata, a publisher landing page, or an HTML paywall response as full text.
+
+When `source/paper.pdf` exists, extract traceable text before reading:
+
+```bash
+python3 "<skill-root>/scripts/extract_text.py" \
+  --workspace "<paper workspace>"
+```
+
+Use `evidence/fulltext.md` for readable text, `evidence/pages.json` for page and block geometry, and `evidence/extraction.json` for quality limits. Stable text locators use `P###-B###`; combine them with the PDF page number in consequential evidence citations. Treat `needs_ocr` or `partial_text_ready` as an access limitation. Do not infer that the complete paper was read merely because the PDF file exists.
+
+Build a navigation map after text extraction:
+
+```bash
+python3 "<skill-root>/scripts/analyze_structure.py" \
+  --workspace "<paper workspace>"
+```
+
+Read `evidence/reading-map.md` to navigate the detected outline, `evidence/sections.json` for section ranges, and `evidence/claim_candidates.json` for cue-based sentences. Treat section types as heuristic labels and every claim candidate as unreviewed. Verify each candidate against its surrounding blocks in `evidence/pages.json` before promoting it to a formal claim record. Add central claims the cue rules missed; discard rhetorical, background, citation, or negated sentences that are not the focal authors' claims.
+
+For an arXiv paper with `source/arxiv-source.tar`, extract author-supplied figures and their LaTeX context with the reused source-first extractor:
+
+```bash
+python3 "<skill-root>/scripts/extract_figures.py" \
+  --workspace "<paper workspace>"
+```
+
+Read `evidence/images_manifest.json` before choosing figures for the report. Prefer figures recovered from the author's source bundle over webpage screenshots. Include only figures that improve understanding or change an evidence judgment. If the source bundle is missing or extraction fails, record the limitation and continue from the PDF rather than inventing a replacement.
+
 Reuse an existing workspace for the same paper unless the user requests a separate version. Never write generated paper workspaces inside the installed skill directory.
+Do not pass `--force` unless the user has explicitly confirmed that replacing the existing `report.md` is acceptable.
 
 ### 6. Build the Paper's Mental Model
 
@@ -111,6 +174,8 @@ Before judging the paper, establish:
 3. the central idea, thesis, or mechanism;
 4. the structure connecting premises, method, evidence, and conclusion;
 5. the minimum concepts, notation, and prior work needed to follow that structure.
+
+Also place the paper in context when the source permits it: record its problem route, main assumptions, evaluation or support route, contribution type, similar or contrasting works actually identified from the paper, and the most important gap it leaves. Do not turn this single-paper step into a broad literature review.
 
 Use a small example when it materially improves understanding. Do not introduce examples that silently change the paper's assumptions.
 
@@ -140,6 +205,21 @@ Use evidence appropriate to the paper:
 
 Use actions such as `supported`, `partially_supported`, `not_established`, `contradicted`, or `not_verifiable_from_available_source` rather than unanchored numerical scores.
 
+For each central claim, record the strongest safe version, wording that would overstate the evidence, and whether the claimed result is demonstrated, planned, assumed, interpreted, or unavailable. Use the claim-safety table in `assets/report-template.md`; its adapted third-party provenance is recorded in `references/third-party-notices.md`.
+
+Review `evidence/claims.json` after the preprocessing pipeline. Set each record to `keep` or `discard`; never leave a final record `pending`. For kept claims, review the adjacent source blocks, complete every evidence and boundary field, then validate:
+
+```bash
+python3 "<skill-root>/scripts/claim_records.py" apply-review \
+  --workspace "<paper workspace>" \
+  --review "<compact review overlay.json>"
+
+python3 "<skill-root>/scripts/claim_records.py" validate \
+  --workspace "<paper workspace>"
+```
+
+Use a compact review overlay with `discard_unlisted: true` and a non-empty `discard_reason` when only a small set of candidates are central; list complete reviewed fields only for kept claims. Put central claims missed by cue retrieval in the overlay's `new_claims` list with a unique claim ID, valid source locator, and complete reviewed fields. The command preserves raw candidates, constructs adjacent context for new records, and merges decisions into `evidence/claims.json`. Do not use the claim records as final report evidence while `evidence/claim-validation.json` has `passed: false`. Never force an unrelated candidate to fit.
+
 ### 8. Apply Type-Specific Review Standards
 
 For experimental or social-science empirical papers, check design, sampling, measurement, controls, statistical uncertainty, alternative explanations, robustness, and external validity.
@@ -160,7 +240,7 @@ Use the report template in `assets/report-template.md` when available. Keep the 
 
 1. Three-minute understanding;
 2. Paper identity and access boundary;
-3. Research question or thesis;
+3. Research question, thesis, and field position;
 4. Essential concepts and terms;
 5. Method, theory, or argument structure;
 6. Central claims and evidence;
@@ -175,6 +255,16 @@ Adapt depth to the reading mode. A quick read may compress sections, but it must
 Use figures, tables, formulas, or quotations only when they improve understanding or alter a judgment. Keep them near the explanation they support. Respect quotation limits and prefer faithful paraphrase.
 
 ### 10. Validate Before Delivery
+
+Run the bundled final validator:
+
+```bash
+python3 "<skill-root>/scripts/validate_report.py" \
+  --workspace "<paper workspace>" \
+  --final
+```
+
+Require both `evidence/claim-validation.json` and `evidence/validation.json` to have `passed: true` for a final full-text report. Do not deliver while either gate is false. Fix every error and rerun validation. Review warnings individually; keep a warning only when the report already states the corresponding boundary and the issue does not invalidate a central judgment. The report validator reuses duplicate-paragraph, image-path, encoding, and math-compatibility checks from `sodalone/paper-reading-skill`, with cross-disciplinary report rules adapted for this skill.
 
 Before delivering, verify that:
 

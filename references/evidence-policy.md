@@ -14,15 +14,18 @@ Label every claim as exactly one category:
 
 Never rewrite a report inference as an author claim. When wording is ambiguous, prefer the weaker category and explain why.
 
+Items in `evidence/claim_candidates.json` are retrieval hints, not claim records. Review the surrounding source blocks, identify the speaker, preserve negation and scope, and confirm that the statement matters to the paper's main line before assigning a claim category or verdict.
+
 ## Source Locations
 
 Use the most stable locator available:
 
 1. named section or subsection plus paragraph context;
-2. PDF page and printed page when both exist;
-3. figure, table, equation, theorem, proposition, example, or appendix identifier;
-4. quoted opening words for unnumbered passages;
-5. abstract-only label when full text is unavailable.
+2. PDF page plus the extracted `P###-B###` block locator when available;
+3. PDF page and printed page when both exist;
+4. figure, table, equation, theorem, proposition, example, or appendix identifier;
+5. quoted opening words for unnumbered passages;
+6. abstract-only label when full text is unavailable.
 
 A location must allow another reader to find the evidence without rereading the entire paper. Do not invent paragraph or page numbers.
 
