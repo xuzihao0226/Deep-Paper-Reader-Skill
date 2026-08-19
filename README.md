@@ -117,17 +117,6 @@ Use $deep-paper-reader to deeply read this paper and produce a Chinese report wi
 - preserve a single reusable Markdown report;
 - ask for human confirmation only when a decision materially changes the result.
 
-## Acknowledgments
-
-The project is independently implemented and draws product inspiration from:
-
-- [sodalone/paper-reading-skill](https://github.com/sodalone/paper-reading-skill)
-- [snake-fan/Paper-Reading-Skills](https://github.com/snake-fan/Paper-Reading-Skills)
-
-The Paper Position Record and Claim Support Bank structures from `snake-fan/Paper-Reading-Skills` are adapted in the report template under the MIT License. Copyright and license details are preserved in [`references/third-party-notices.md`](references/third-party-notices.md).
-
-The owner of `sodalone/paper-reading-skill` has explicitly authorized direct reuse, modification, and integration of its code in this project. `scripts/extract_figures.py`, `scripts/validate_report.py`, and their inherited regression checks directly retain and adapt that project's implementation; source headers identify the provenance. The stage ordering of `scripts/run_pipeline.py` also adapts that project's pipeline concept, while generalizing it into cross-platform Python and supporting non-arXiv inputs.
-
 ## License
 
 MIT
